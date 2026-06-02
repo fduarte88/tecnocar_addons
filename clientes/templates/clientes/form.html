@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% block title %}{{ titulo }} — TecnoCar{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    const input = document.getElementById('id_cedula');
+    if (!input) return;
+
+    function format(val) {
+        // quitar todo excepto dígitos
+        const digits = val.replace(/\D/g, '');
+        // agregar puntos como separador de miles
+        return digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    }
+
+    input.addEventListener('input', function () {
+        const pos = this.selectionStart;
+        const prev = this.value.length;
+        this.value = format(this.value);
+        // ajustar cursor
+        const diff = this.value.length - prev;
+        this.setSelectionRange(pos + diff, pos + diff);
+    });
+
+    // al cargar si ya tiene valor (modo edición)
+    if (input.value) input.value = format(input.value);
+})();
+</script>
+{% endblock %}
+{% block page_title %}{{ titulo }}{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb mb-3">
+        <li class="breadcrumb-item"><a href="{% url 'core:dashboard' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'clientes:lista' %}">Clientes</a></li>
+        <li class="breadcrumb-item active">{{ titulo }}</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-lg-7">
+        <div class="card form-card">
+            <div class="card-header py-3">
+                <i class="fas fa-user me-2 text-warning"></i>{{ titulo }}
+            </div>
+            <div class="card-body p-4">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium">Documento de Identidad Nro. *</label>
+                            {{ form.cedula }}
+                            {% if form.cedula.errors %}<div class="text-danger small mt-1">{{ form.cedula.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium">RUC</label>
+                            {{ form.ruc }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium">Nombre *</label>
+                            {{ form.nombre }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium">Apellido *</label>
+                            {{ form.apellido }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium">Teléfono *</label>
+                            {{ form.telefono }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium">Email</label>
+                            {{ form.email }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium">Ciudad</label>
+                            {{ form.ciudad }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium">Dirección</label>
+                            {{ form.direccion }}
+                        </div>
+                        <div class="col-12">
+                            <hr class="my-1">
+                            <div class="form-check mt-2">
+                                <input class="form-check-input" type="checkbox" name="requiere_factura" id="id_requiere_factura"
+                                    {% if form.requiere_factura.value %}checked{% endif %}>
+                                <label class="form-check-label fw-medium" for="id_requiere_factura">
+                                    Requiere Factura
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <hr class="my-4">
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-warning px-4">
+                            <i class="fas fa-save me-2"></i>Guardar
+                        </button>
+                        <a href="{% url 'clientes:lista' %}" class="btn btn-outline-secondary px-4">
+                            <i class="fas fa-times me-2"></i>Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

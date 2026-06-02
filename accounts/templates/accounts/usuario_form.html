@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% block title %}{{ titulo }} — TecnoCar{% endblock %}
+{% block page_title %}{{ titulo }}{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb mb-3">
+        <li class="breadcrumb-item"><a href="{% url 'core:dashboard' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'accounts:usuarios_lista' %}">Usuarios</a></li>
+        <li class="breadcrumb-item active">{{ titulo }}</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-lg-8">
+        <div class="card form-card">
+            <div class="card-header py-3">
+                <i class="fas fa-user-cog me-2 text-warning"></i>{{ titulo }}
+            </div>
+            <div class="card-body p-4">
+                <form method="post" enctype="multipart/form-data" novalidate>
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium">Usuario *</label>
+                            {{ form.username }}
+                            {% if form.username.errors %}<div class="text-danger small mt-1">{{ form.username.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium">Rol *</label>
+                            {{ form.rol }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium">Nombre</label>
+                            {{ form.first_name }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium">Apellido</label>
+                            {{ form.last_name }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium">Email</label>
+                            {{ form.email }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium">Teléfono</label>
+                            {{ form.telefono }}
+                        </div>
+                        {% if form.password1 %}
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium">Contraseña *</label>
+                            {{ form.password1 }}
+                            {% if form.password1.errors %}<div class="text-danger small mt-1">{{ form.password1.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium">Confirmar Contraseña *</label>
+                            {{ form.password2 }}
+                            {% if form.password2.errors %}<div class="text-danger small mt-1">{{ form.password2.errors.0 }}</div>{% endif %}
+                        </div>
+                        {% endif %}
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium">Avatar</label>
+                            {{ form.avatar }}
+                            {% if usuario.avatar %}
+                            <div class="mt-2">
+                                <img src="{{ usuario.avatar.url }}" class="rounded-circle" width="48" height="48">
+                                <small class="text-muted ms-2">Avatar actual</small>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 d-flex align-items-end">
+                            <div class="form-check">
+                                {{ form.is_active }}
+                                <label class="form-check-label fw-medium">Usuario Activo</label>
+                            </div>
+                        </div>
+                    </div>
+                    <hr class="my-4">
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-warning px-4">
+                            <i class="fas fa-save me-2"></i> Guardar
+                        </button>
+                        <a href="{% url 'accounts:usuarios_lista' %}" class="btn btn-outline-secondary px-4">
+                            <i class="fas fa-times me-2"></i> Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

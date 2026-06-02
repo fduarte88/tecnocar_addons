@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% block title %}Clientes — TecnoCar{% endblock %}
+{% block page_title %}Clientes{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'clientes:crear' %}" class="btn btn-warning">
+    <i class="fas fa-plus me-1"></i> Nuevo Cliente
+</a>
+{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb mb-3">
+        <li class="breadcrumb-item"><a href="{% url 'core:dashboard' %}">Dashboard</a></li>
+        <li class="breadcrumb-item active">Clientes</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<!-- Buscar -->
+<div class="card mb-4 border-0 shadow-sm">
+    <div class="card-body py-2">
+        <form method="get" class="d-flex gap-2">
+            <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Buscar por nombre, apellido o cédula...">
+            <button type="submit" class="btn btn-outline-primary px-3"><i class="fas fa-search"></i></button>
+            {% if q %}<a href="{% url 'clientes:lista' %}" class="btn btn-outline-secondary px-3"><i class="fas fa-times"></i></a>{% endif %}
+        </form>
+    </div>
+</div>
+
+<div class="card table-card">
+    <div class="card-header d-flex justify-content-between align-items-center py-3">
+        <span><i class="fas fa-users me-2 text-warning"></i>Listado de Clientes</span>
+        <span class="badge bg-secondary">{{ clientes.count }} cliente(s)</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Doc. Identidad</th>
+                        <th>Nombre</th>
+                        <th>Ciudad</th>
+                        <th>Teléfono</th>
+                        <th>Vehículos</th>
+                        <th class="text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in clientes %}
+                    <tr>
+                        <td class="fw-medium">{{ c.cedula }}</td>
+                        <td>{{ c.nombre_completo }}</td>
+                        <td>{{ c.ciudad|default:"—" }}</td>
+                        <td>{{ c.telefono }}</td>
+                        <td>
+                            <span class="badge bg-light text-dark border">{{ c.vehiculos.count }}</span>
+                        </td>
+                        <td class="text-center">
+                            <a href="{% url 'clientes:detalle' c.pk %}" class="btn btn-sm btn-outline-info me-1" title="Ver">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="{% url 'clientes:editar' c.pk %}" class="btn btn-sm btn-outline-primary" title="Editar">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-4 text-muted">
+                            No se encontraron clientes{% if q %} para "{{ q }}"{% endif %}.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
