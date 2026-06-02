@@ -1,0 +1,298 @@
+{% extends 'base.html' %}
+{% block title %}{{ titulo }} — TecnoCar{% endblock %}
+{% block page_title %}{{ titulo }}{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb mb-3">
+        <li class="breadcrumb-item"><a href="{% url 'core:dashboard' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'fichas:lista' %}">Hojas de Recepción</a></li>
+        <li class="breadcrumb-item active">{{ titulo }}</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<form method="post" novalidate id="forma-recepcion">
+{% csrf_token %}
+
+{% if form.errors %}
+<div class="alert alert-danger alert-dismissible fade show">
+    <i class="fas fa-exclamation-circle me-2"></i>
+    <strong>Corrija los siguientes errores:</strong>
+    <ul class="mb-0 mt-1">
+        {% for field in form %}{% for error in field.errors %}
+        <li>{{ field.label }}: {{ error }}</li>
+        {% endfor %}{% endfor %}
+        {% for error in form.non_field_errors %}
+        <li>{{ error }}</li>
+        {% endfor %}
+    </ul>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+
+<!-- PASO 1 · CLIENTE -------------------------------------------------->
+<div class="card form-card mb-4">
+    <div class="card-header py-3">
+        <span class="badge bg-warning text-dark me-2">1</span>Seleccionar Cliente
+    </div>
+    <div class="card-body p-4">
+        <div class="row g-3 align-items-end">
+            <div class="col-12 col-md-8">
+                <label class="form-label fw-medium">Cliente *</label>
+                <select class="form-select" id="sel_cliente" name="cliente">
+                    <option value="">— Seleccione un cliente —</option>
+                    {% for c in clientes %}
+                    <option value="{{ c.pk }}" {% if c.pk|stringformat:"s" == cliente_pk %}selected{% endif %}>
+                        {{ c.nombre_completo }} — {{ c.cedula }}
+                    </option>
+                    {% endfor %}
+                </select>
+                {% if form.cliente.errors %}
+                <div class="text-danger small mt-1">{{ form.cliente.errors.0 }}</div>
+                {% endif %}
+            </div>
+            <div class="col-12 col-md-4">
+                <a href="{% url 'clientes:crear' %}" class="btn btn-outline-secondary w-100">
+                    <i class="fas fa-user-plus me-1"></i>Nuevo Cliente
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- PASO 2 · VEHÍCULO ------------------------------------------------->
+<div class="card form-card mb-4 {% if not cliente_pk and not form.errors %}d-none{% endif %}" id="sec_vehiculo">
+    <div class="card-header py-3">
+        <span class="badge bg-warning text-dark me-2">2</span>Seleccionar Vehículo
+    </div>
+    <div class="card-body p-4">
+        <div class="row g-3 align-items-end">
+            <div class="col-12 col-md-8">
+                <label class="form-label fw-medium">Vehículo *</label>
+                {{ form.vehiculo }}
+                {% if form.vehiculo.errors %}
+                <div class="text-danger small mt-1">{{ form.vehiculo.errors.0 }}</div>
+                {% endif %}
+            </div>
+            <div class="col-12 col-md-4" id="col_nuevo_vehiculo" {% if not cliente_pk %}style="display:none"{% endif %}>
+                <a id="btn_nuevo_vehiculo" href="#" class="btn btn-outline-success w-100">
+                    <i class="fas fa-car me-1"></i>Registrar Vehículo
+                </a>
+            </div>
+        </div>
+
+        <!-- Datos + Accesorios del vehículo seleccionado -->
+        <div id="info_vehiculo" class="mt-4 {% if not vehiculo_pk %}d-none{% endif %}">
+            <hr class="mb-3">
+            <div class="row g-4">
+                <!-- Datos del vehículo -->
+                <div class="col-12 col-lg-7">
+                    <div class="section-title mb-3">Datos del Vehículo</div>
+                    <div id="info_vehiculo_datos" class="row g-2 text-center">
+                        <!-- rellena JS -->
+                    </div>
+                </div>
+                <!-- Accesorios -->
+                <div class="col-12 col-lg-5">
+                    <div class="section-title mb-3">Accesorios al Ingreso</div>
+                    <div class="row g-2" id="accesorios_checks">
+                        {% for campo, label in accesorios_campos %}
+                        <div class="col-6">
+                            <div class="form-check">
+                                <input class="form-check-input acc-check"
+                                       type="checkbox"
+                                       name="{{ campo }}"
+                                       id="chk_{{ campo }}"
+                                       data-campo="{{ campo }}">
+                                <label class="form-check-label small" for="chk_{{ campo }}">{{ label }}</label>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- PASO 3 · DATOS DE LA RECEPCIÓN ----------------------------------->
+<div class="card form-card mb-4 {% if not vehiculo_pk and not form.errors %}d-none{% endif %}" id="sec_form">
+    <div class="card-header py-3">
+        <span class="badge bg-warning text-dark me-2">3</span>Datos de la Recepción
+    </div>
+    <div class="card-body p-4">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label fw-medium">Fecha y Hora de Ingreso *</label>
+                {{ form.fecha_ingreso }}
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-medium">Km al Ingreso</label>
+                {{ form.km_ingreso }}
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-medium">Fecha Estimada de Entrega</label>
+                {{ form.fecha_estimada }}
+            </div>
+            <div class="col-12">
+                <label class="form-label fw-medium">Solicitud del Cliente *</label>
+                {{ form.solicitud }}
+                {% if form.solicitud.errors %}
+                <div class="text-danger small mt-1">{{ form.solicitud.errors.0 }}</div>
+                {% endif %}
+            </div>
+        </div>
+        <hr class="my-4">
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-warning px-4">
+                <i class="fas fa-save me-2"></i>Guardar Hoja de Recepción
+            </button>
+            <a href="{% url 'fichas:lista' %}" class="btn btn-outline-secondary px-4">
+                <i class="fas fa-times me-2"></i>Cancelar
+            </a>
+        </div>
+    </div>
+</div>
+
+</form>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
+<script>
+// ── Flatpickr: fecha+hora ──────────────────────────────────────────
+flatpickr('.flatpickr-dt', {
+    enableTime: true,
+    time_24hr: true,
+    dateFormat: 'd/m/Y H:i',
+    locale: 'es',
+    allowInput: true,
+    defaultDate: new Date(),
+});
+// ── Flatpickr: solo fecha ──────────────────────────────────────────
+flatpickr('.flatpickr-date', {
+    dateFormat: 'd/m/Y',
+    locale: 'es',
+    allowInput: true,
+});
+</script>
+<script>
+(function () {
+    let vehiculosData = {{ vehiculos_json|safe }};
+    const clientePkInicial = "{{ cliente_pk }}";
+    const vehiculoPkInicial = "{{ vehiculo_pk }}";
+
+    const selCliente    = document.getElementById('sel_cliente');
+    const selVehiculo   = document.getElementById('sel_vehiculo');
+    const secVehiculo   = document.getElementById('sec_vehiculo');
+    const secForm       = document.getElementById('sec_form');
+    const infoVehiculo  = document.getElementById('info_vehiculo');
+    const infoDatos     = document.getElementById('info_vehiculo_datos');
+    const btnNuevoVeh   = document.getElementById('btn_nuevo_vehiculo');
+    const colNuevoVeh   = document.getElementById('col_nuevo_vehiculo');
+
+    // ── Renderizar datos del vehículo ──────────────────────────────
+    function renderDatos(v) {
+        infoDatos.innerHTML = `
+            <div class="col-6 col-md-4"><small class="text-muted d-block">Marca</small><strong>${v.marca}</strong></div>
+            <div class="col-6 col-md-4"><small class="text-muted d-block">Modelo</small><strong>${v.modelo}</strong></div>
+            <div class="col-6 col-md-4"><small class="text-muted d-block">Chapa</small><strong>${v.placa}</strong></div>
+            <div class="col-6 col-md-2"><small class="text-muted d-block">Año</small><strong>${v.año}</strong></div>
+            <div class="col-6 col-md-4"><small class="text-muted d-block">Color</small><strong>${v.color}</strong></div>
+            <div class="col-12 col-md-6"><small class="text-muted d-block">Chassis</small><strong>${v.chassis}</strong></div>
+            <div class="col-6"><small class="text-muted d-block">Km Entrada</small><strong>${Number(v.km_entrada).toLocaleString('es-PY')}</strong></div>
+            <div class="col-6"><small class="text-muted d-block">Km Salida</small><strong>${Number(v.km_salida).toLocaleString('es-PY')}</strong></div>`;
+    }
+
+    // ── Pre-marcar accesorios según el vehículo ────────────────────
+    function cargarAccesorios(v) {
+        document.querySelectorAll('.acc-check').forEach(chk => {
+            const campo = chk.dataset.campo;
+            chk.checked = v[campo] === true;
+        });
+    }
+
+    // ── Mostrar sección completa del vehículo ──────────────────────
+    function mostrarVehiculo(v) {
+        renderDatos(v);
+        cargarAccesorios(v);
+        infoVehiculo.classList.remove('d-none');
+        secForm.classList.remove('d-none');
+    }
+
+    function ocultarVehiculo() {
+        infoVehiculo.classList.add('d-none');
+        secForm.classList.add('d-none');
+    }
+
+    // ── Poblar select de vehículos ─────────────────────────────────
+    function poblarVehiculos(lista, seleccionado) {
+        selVehiculo.innerHTML = '<option value="">— Seleccione un vehículo —</option>';
+        lista.forEach(v => {
+            const opt = document.createElement('option');
+            opt.value = v.id;
+            opt.textContent = v.texto;
+            if (String(v.id) === String(seleccionado)) opt.selected = true;
+            selVehiculo.appendChild(opt);
+        });
+    }
+
+    // ── Evento: cambio de cliente ──────────────────────────────────
+    selCliente.addEventListener('change', async function () {
+        const pk = this.value;
+        ocultarVehiculo();
+        selVehiculo.innerHTML = '<option value="">— Cargando... —</option>';
+        vehiculosData = [];
+
+        if (!pk) {
+            secVehiculo.classList.add('d-none');
+            colNuevoVeh.style.display = 'none';
+            return;
+        }
+
+        btnNuevoVeh.href = `/fichas/vehiculo/nuevo/${pk}/`;
+        colNuevoVeh.style.display = '';
+        secVehiculo.classList.remove('d-none');
+
+        try {
+            const resp = await fetch(`/fichas/api/cliente/${pk}/vehiculos/`);
+            vehiculosData = await resp.json();
+        } catch (e) { vehiculosData = []; }
+
+        if (vehiculosData.length === 0) {
+            selVehiculo.innerHTML = '<option value="">— Sin vehículos registrados —</option>';
+        } else {
+            poblarVehiculos(vehiculosData, '');
+        }
+    });
+
+    // ── Evento: cambio de vehículo ─────────────────────────────────
+    selVehiculo.addEventListener('change', function () {
+        const pk = this.value;
+        if (!pk) { ocultarVehiculo(); return; }
+        const v = vehiculosData.find(x => String(x.id) === String(pk));
+        if (v) mostrarVehiculo(v);
+    });
+
+    // ── Inicialización (modo edición / pre-selección) ──────────────
+    if (clientePkInicial) {
+        btnNuevoVeh.href = `/fichas/vehiculo/nuevo/${clientePkInicial}/`;
+        colNuevoVeh.style.display = '';
+        poblarVehiculos(vehiculosData, vehiculoPkInicial);
+        if (vehiculoPkInicial) {
+            const v = vehiculosData.find(x => String(x.id) === vehiculoPkInicial);
+            if (v) mostrarVehiculo(v);
+        }
+    }
+
+
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+{% block title %}{{ titulo }} — TecnoCar{% endblock %}
+{% block page_title %}{{ titulo }}{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb mb-3">
+        <li class="breadcrumb-item"><a href="{% url 'core:dashboard' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'clientes:lista' %}">Clientes</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'clientes:detalle' cliente.pk %}">{{ cliente }}</a></li>
+        <li class="breadcrumb-item active">Vehículo</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+
+<!-- Banner del cliente -->
+<div class="alert alert-warning d-flex align-items-center gap-3 mb-4 border-0 shadow-sm" style="border-left: 4px solid #f59e0b !important;">
+    <i class="fas fa-user-circle fa-2x text-warning"></i>
+    <div>
+        <div class="fw-bold">{{ cliente.nombre_completo }}</div>
+        <div class="small text-muted">Doc: {{ cliente.cedula }}{% if cliente.ruc %} &nbsp;|&nbsp; RUC: {{ cliente.ruc }}{% endif %}{% if cliente.telefono %} &nbsp;|&nbsp; <i class="fas fa-phone me-1"></i>{{ cliente.telefono }}{% endif %}</div>
+    </div>
+</div>
+
+<form method="post" novalidate>
+    {% csrf_token %}
+    <div class="row g-4">
+
+        <!-- Datos del Vehículo -->
+        <div class="col-12 col-lg-8">
+            <div class="card form-card">
+                <div class="card-header py-3">
+                    <i class="fas fa-car me-2 text-warning"></i>Datos del Vehículo
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium">Marca *</label>
+                            {{ form.marca }}
+                            {% if form.marca.errors %}<div class="text-danger small mt-1">{{ form.marca.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium">Chapa *</label>
+                            {{ form.placa }}
+                            {% if form.placa.errors %}<div class="text-danger small mt-1">{{ form.placa.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium">Modelo *</label>
+                            {{ form.modelo }}
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-medium">Año *</label>
+                            {{ form.año }}
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-medium">Color *</label>
+                            {{ form.color }}
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-medium">Chassis</label>
+                            {{ form.chassis }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium">Km Entrada</label>
+                            {{ form.km_entrada }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium">Km Salida</label>
+                            {{ form.km_salida }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Accesorios -->
+        <div class="col-12 col-lg-4">
+            <div class="card form-card h-100">
+                <div class="card-header py-3">
+                    <i class="fas fa-toolbox me-2 text-warning"></i>Accesorios
+                </div>
+                <div class="card-body p-4">
+                    <p class="text-muted small mb-3">Marque los accesorios presentes en el vehículo al momento del ingreso.</p>
+                    <div class="d-flex flex-column gap-2">
+                        {% for field in form %}
+                            {% if field.name|slice:":4" == "acc_" %}
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox"
+                                       name="{{ field.html_name }}"
+                                       id="{{ field.auto_id }}"
+                                       {% if field.value %}checked{% endif %}>
+                                <label class="form-check-label" for="{{ field.auto_id }}">
+                                    {{ field.label }}
+                                </label>
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="d-flex gap-2 mt-4">
+        <button type="submit" class="btn btn-warning px-4">
+            <i class="fas fa-save me-2"></i>Guardar Vehículo
+        </button>
+        <a href="{% url 'clientes:detalle' cliente.pk %}" class="btn btn-outline-secondary px-4">
+            <i class="fas fa-times me-2"></i>Cancelar
+        </a>
+    </div>
+</form>
+
+{% endblock %}
