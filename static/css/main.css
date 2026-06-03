@@ -34,11 +34,16 @@ body { background-color: #f4f6f9; }
     min-height: calc(100vh - var(--topnav-height));
     margin-left: var(--sidebar-width);
     margin-top: var(--topnav-height);
+    transition: margin-left 0.15s ease-in-out;
 }
 
-/* Collapsed sidebar */
-.sb-sidenav-toggled #layoutSidenav_nav { transform: translateX(-var(--sidebar-width)); }
-.sb-sidenav-toggled #layoutSidenav_content { margin-left: 0; }
+/* Collapsed sidebar — translateX necesita calc() para variables CSS */
+.sb-sidenav-toggled #layoutSidenav_nav {
+    transform: translateX(calc(-1 * var(--sidebar-width)));
+}
+.sb-sidenav-toggled #layoutSidenav_content {
+    margin-left: 0;
+}
 
 /* ── Sidenav Colors ─────────────────────── */
 .sb-sidenav-dark { background: #1a1a2e; color: rgba(255,255,255,.75); }

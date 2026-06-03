@@ -4,6 +4,7 @@ from .models import Presupuesto, ItemPresupuesto
 
 class ItemInline(admin.TabularInline):
     model = ItemPresupuesto
+    fields = ['descripcion', 'precio']
     extra = 0
 
 

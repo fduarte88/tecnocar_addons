@@ -23,11 +23,22 @@ ACCESORIOS_CAMPOS = [
 @login_required
 def fichas_lista(request):
     fichas = FichaIngreso.objects.select_related('vehiculo__cliente', 'tecnico').order_by('-fecha_ingreso')
-    estado = request.GET.get('estado', '')
+    estado    = request.GET.get('estado', '')
+    vehiculo_pk = request.GET.get('vehiculo', '')
+
+    vehiculo_obj = None
+    if vehiculo_pk:
+        vehiculo_obj = get_object_or_404(Vehiculo, pk=vehiculo_pk)
+        fichas = fichas.filter(vehiculo=vehiculo_obj)
     if estado:
         fichas = fichas.filter(estado=estado)
-    return render(request, 'fichas/lista.html', {'fichas': fichas, 'estado': estado,
-                                                  'estados': FichaIngreso.ESTADO_CHOICES})
+
+    return render(request, 'fichas/lista.html', {
+        'fichas': fichas,
+        'estado': estado,
+        'estados': FichaIngreso.ESTADO_CHOICES,
+        'vehiculo_filtro': vehiculo_obj,
+    })
 
 
 @login_required

@@ -1,8 +1,10 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.http import HttpResponse
 from .models import Presupuesto, ItemPresupuesto
 from .forms import PresupuestoForm, ItemPresupuestoForm
+from .pdf import generar_pdf_presupuesto
 
 
 @login_required
@@ -19,12 +21,42 @@ def presupuestos_lista(request):
 
 @login_required
 def presupuesto_crear(request):
-    form = PresupuestoForm(request.POST or None)
-    if request.method == 'POST' and form.is_valid():
-        presupuesto = form.save()
-        messages.success(request, 'Presupuesto creado exitosamente.')
-        return redirect('presupuestos:detalle', pk=presupuesto.pk)
-    return render(request, 'presupuestos/form.html', {'form': form, 'titulo': 'Nuevo Presupuesto'})
+    from fichas.models import FichaIngreso
+    if request.method == 'POST':
+        ficha_pk      = request.POST.get('ficha')
+        observaciones = request.POST.get('observaciones', '')
+        descripciones = request.POST.getlist('item_descripcion')
+        precios       = request.POST.getlist('item_precio')
+
+        if ficha_pk:
+            presupuesto = Presupuesto.objects.create(
+                ficha_id=ficha_pk,
+                observaciones=observaciones,
+            )
+            for desc, precio in zip(descripciones, precios):
+                desc = desc.strip()
+                if desc:
+                    try:
+                        p = int(str(precio).replace('.', '').replace(',', '') or 0)
+                    except ValueError:
+                        p = 0
+                    ItemPresupuesto.objects.create(
+                        presupuesto=presupuesto,
+                        descripcion=desc,
+                        precio=p,
+                    )
+            messages.success(request, f'Presupuesto P-{presupuesto.pk:04d} creado exitosamente.')
+            return redirect('presupuestos:detalle', pk=presupuesto.pk)
+        else:
+            messages.error(request, 'Debe seleccionar una Hoja de Recepción.')
+
+    fichas = FichaIngreso.objects.select_related(
+        'vehiculo__cliente'
+    ).exclude(estado='entregado').order_by('-fecha_ingreso')
+    return render(request, 'presupuestos/form.html', {
+        'fichas': fichas,
+        'titulo': 'Nuevo Presupuesto',
+    })
 
 
 @login_required
@@ -55,6 +87,15 @@ def presupuesto_eliminar_item(request, pk, item_pk):
     item.delete()
     messages.success(request, 'Item eliminado.')
     return redirect('presupuestos:detalle', pk=pk)
+
+
+@login_required
+def presupuesto_pdf(request, pk):
+    presupuesto = get_object_or_404(Presupuesto, pk=pk)
+    buffer = generar_pdf_presupuesto(presupuesto)
+    response = HttpResponse(buffer, content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="P-{presupuesto.pk:04d}.pdf"'
+    return response
 
 
 @login_required
