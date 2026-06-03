@@ -1,47 +1,227 @@
 {% extends 'base.html' %}
-{% block title %}{{ titulo }} — TecnoCar{% endblock %}
-{% block page_title %}{{ titulo }}{% endblock %}
+{% load guarani_filters %}
+{% block title %}Nuevo Presupuesto — TecnoCar{% endblock %}
+{% block page_title %}Nuevo Presupuesto{% endblock %}
 
 {% block breadcrumb %}
 <nav aria-label="breadcrumb">
     <ol class="breadcrumb mb-3">
         <li class="breadcrumb-item"><a href="{% url 'core:dashboard' %}">Dashboard</a></li>
         <li class="breadcrumb-item"><a href="{% url 'presupuestos:lista' %}">Presupuestos</a></li>
-        <li class="breadcrumb-item active">{{ titulo }}</li>
+        <li class="breadcrumb-item active">Nuevo Presupuesto</li>
     </ol>
 </nav>
 {% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-12 col-lg-7">
-        <div class="card form-card">
-            <div class="card-header py-3">
-                <i class="fas fa-file-invoice-dollar me-2 text-warning"></i>{{ titulo }}
+<form method="post" id="form-presupuesto" novalidate>
+{% csrf_token %}
+
+<!-- PASO 1 · Hoja de Recepción -->
+<div class="card form-card mb-4">
+    <div class="card-header py-3">
+        <span class="badge bg-warning text-dark me-2">1</span>Seleccionar Hoja de Recepción
+    </div>
+    <div class="card-body p-4">
+        <div class="row g-3">
+            <div class="col-12 col-md-8">
+                <label class="form-label fw-medium">Hoja de Recepción *</label>
+                <select class="form-select" name="ficha" id="sel_ficha" required>
+                    <option value="">— Seleccione una HR —</option>
+                    {% for f in fichas %}
+                    <option value="{{ f.pk }}"
+                            data-cliente="{{ f.vehiculo.cliente.nombre_completo }}"
+                            data-vehiculo="{{ f.vehiculo.marca }} {{ f.vehiculo.modelo }}"
+                            data-placa="{{ f.vehiculo.placa }}"
+                            data-fecha="{{ f.fecha_ingreso|date:'d/m/Y H:i' }}"
+                            data-solicitud="{{ f.solicitud|truncatechars:80 }}">
+                        HR-{{ f.pk|stringformat:"04d" }} — {{ f.vehiculo.cliente }} — {{ f.vehiculo.placa }}
+                    </option>
+                    {% endfor %}
+                </select>
             </div>
-            <div class="card-body p-4">
-                <form method="post" novalidate>
-                    {% csrf_token %}
-                    <div class="mb-3">
-                        <label class="form-label fw-medium">Hoja de Recepción *</label>
-                        {{ form.ficha }}
-                        {% if form.ficha.errors %}<div class="text-danger small mt-1">{{ form.ficha.errors.0 }}</div>{% endif %}
-                    </div>
-                    <div class="mb-4">
-                        <label class="form-label fw-medium">Observaciones</label>
-                        {{ form.observaciones }}
-                    </div>
-                    <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-warning px-4">
-                            <i class="fas fa-save me-2"></i>Crear Presupuesto
-                        </button>
-                        <a href="{% url 'presupuestos:lista' %}" class="btn btn-outline-secondary px-4">
-                            <i class="fas fa-times me-2"></i>Cancelar
-                        </a>
-                    </div>
-                </form>
+            <div class="col-12 col-md-4">
+                <label class="form-label fw-medium">Observaciones</label>
+                <textarea name="observaciones" class="form-control" rows="2"
+                          placeholder="Notas adicionales..."></textarea>
+            </div>
+        </div>
+
+        <!-- Info de la HR seleccionada -->
+        <div id="info_hr" class="mt-3 d-none">
+            <div class="alert alert-warning border-0 mb-0 py-2 px-3 d-flex flex-wrap gap-4">
+                <span><i class="fas fa-user me-1 text-warning"></i><span id="hr_cliente" class="fw-medium"></span></span>
+                <span><i class="fas fa-car me-1 text-warning"></i><span id="hr_vehiculo"></span> — <span id="hr_placa" class="fw-medium"></span></span>
+                <span><i class="fas fa-calendar me-1 text-warning"></i><span id="hr_fecha"></span></span>
+                <span class="w-100 text-muted small fst-italic" id="hr_solicitud"></span>
             </div>
         </div>
     </div>
 </div>
+
+<!-- PASO 2 · Items -->
+<div class="card form-card mb-4" id="sec_items">
+    <div class="card-header py-3">
+        <span class="badge bg-warning text-dark me-2">2</span>Trabajos / Items
+    </div>
+
+    <div class="table-responsive">
+        <table class="table mb-0" id="tabla_items">
+            <thead>
+                <tr>
+                    <th class="ps-4" style="width:4%">#</th>
+                    <th>Descripción del Trabajo</th>
+                    <th class="text-end" style="width:22%">Precio (₲)</th>
+                    <th style="width:5%"></th>
+                </tr>
+            </thead>
+            <tbody id="tbody_items">
+                <!-- las filas se agregan por JS -->
+                <tr id="tr_vacio">
+                    <td colspan="4" class="text-center py-3 text-muted fst-italic">
+                        Agregue el primer item abajo.
+                    </td>
+                </tr>
+            </tbody>
+            <tfoot>
+                <tr class="table-light">
+                    <td colspan="4" class="px-3 py-2">
+                        <div class="d-flex gap-2 align-items-center">
+                            <i class="fas fa-plus text-warning flex-shrink-0"></i>
+                            <input type="text" id="in_desc" class="form-control"
+                                   placeholder="Descripción del trabajo o repuesto...">
+                            <div class="input-group" style="max-width:200px">
+                                <span class="input-group-text fw-bold">&#x20B2;</span>
+                                <input type="number" id="in_precio" class="form-control text-end"
+                                       placeholder="0" min="0">
+                            </div>
+                            <button type="button" id="btn_agregar"
+                                    class="btn btn-warning btn-sm px-3 flex-shrink-0">
+                                <i class="fas fa-plus me-1"></i>Agregar
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    <!-- Totalizador -->
+    <div class="card-footer bg-white border-top px-4 py-3">
+        <div class="d-flex justify-content-end align-items-center gap-4">
+            <span class="text-muted">TOTAL</span>
+            <span class="fw-bold fs-4" id="total_display">&#x20B2; 0</span>
+        </div>
+    </div>
+</div>
+
+<!-- Botones -->
+<div class="d-flex gap-2">
+    <button type="submit" class="btn btn-warning px-4">
+        <i class="fas fa-save me-2"></i>Guardar Presupuesto
+    </button>
+    <a href="{% url 'presupuestos:lista' %}" class="btn btn-outline-secondary px-4">
+        <i class="fas fa-times me-2"></i>Cancelar
+    </a>
+</div>
+
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    let contador = 0;
+
+    // ── Info de la HR ──────────────────────────────────────────
+    const selFicha = document.getElementById('sel_ficha');
+    selFicha.addEventListener('change', function () {
+        const opt = this.options[this.selectedIndex];
+        const infoDiv = document.getElementById('info_hr');
+        if (this.value) {
+            document.getElementById('hr_cliente').textContent   = opt.dataset.cliente;
+            document.getElementById('hr_vehiculo').textContent  = opt.dataset.vehiculo;
+            document.getElementById('hr_placa').textContent     = opt.dataset.placa;
+            document.getElementById('hr_fecha').textContent     = opt.dataset.fecha;
+            document.getElementById('hr_solicitud').textContent = opt.dataset.solicitud;
+            infoDiv.classList.remove('d-none');
+        } else {
+            infoDiv.classList.add('d-none');
+        }
+    });
+
+    // ── Formato Guaraní ────────────────────────────────────────
+    function fmtGs(n) {
+        return '₲ ' + Math.round(n).toLocaleString('es-PY').replace(/,/g, '.');
+    }
+
+    // ── Recalcular total ───────────────────────────────────────
+    function recalcular() {
+        let total = 0;
+        document.querySelectorAll('.fila-item').forEach(tr => {
+            total += parseInt(tr.dataset.precio || 0, 10);
+        });
+        document.getElementById('total_display').textContent = fmtGs(total);
+        const count = document.querySelectorAll('.fila-item').length;
+        document.getElementById('tr_vacio').style.display = count ? 'none' : '';
+    }
+
+    // ── Agregar fila ───────────────────────────────────────────
+    function agregarItem() {
+        const desc   = document.getElementById('in_desc').value.trim();
+        const precio = parseInt(document.getElementById('in_precio').value || 0, 10);
+        if (!desc) { document.getElementById('in_desc').focus(); return; }
+
+        contador++;
+        const tbody = document.getElementById('tbody_items');
+        const tr = document.createElement('tr');
+        tr.className = 'fila-item';
+        tr.dataset.precio = precio;
+        tr.innerHTML = `
+            <td class="ps-4 text-muted">${contador}</td>
+            <td>
+                ${desc}
+                <input type="hidden" name="item_descripcion" value="${desc.replace(/"/g,'&quot;')}">
+            </td>
+            <td class="text-end fw-medium">
+                ${fmtGs(precio)}
+                <input type="hidden" name="item_precio" value="${precio}">
+            </td>
+            <td class="text-center">
+                <button type="button" class="btn btn-sm btn-link text-danger p-0 btn-quitar" title="Quitar">
+                    <i class="fas fa-times"></i>
+                </button>
+            </td>`;
+
+        tr.querySelector('.btn-quitar').addEventListener('click', () => {
+            tr.remove();
+            // renumerar
+            document.querySelectorAll('.fila-item td:first-child').forEach((td, i) => {
+                td.textContent = i + 1;
+            });
+            contador = document.querySelectorAll('.fila-item').length;
+            recalcular();
+        });
+
+        tbody.appendChild(tr);
+        document.getElementById('in_desc').value   = '';
+        document.getElementById('in_precio').value = '';
+        document.getElementById('in_desc').focus();
+        recalcular();
+    }
+
+    document.getElementById('btn_agregar').addEventListener('click', agregarItem);
+
+    // Enter en precio → agregar
+    document.getElementById('in_precio').addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); agregarItem(); }
+    });
+    // Enter en descripción → pasar a precio
+    document.getElementById('in_desc').addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); document.getElementById('in_precio').focus(); }
+    });
+
+    recalcular();
+})();
+</script>
 {% endblock %}

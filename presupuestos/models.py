@@ -25,31 +25,23 @@ class Presupuesto(models.Model):
         return f'P-{self.pk:04d} | {self.ficha.vehiculo}'
 
     @property
-    def subtotal(self):
-        return sum(item.total for item in self.items.all())
-
-    @property
-    def iva(self):
-        return self.subtotal * 16 / 100
-
-    @property
     def total(self):
-        return self.subtotal + self.iva
+        return sum(item.total for item in self.items.all())
 
 
 class ItemPresupuesto(models.Model):
     presupuesto = models.ForeignKey(Presupuesto, on_delete=models.CASCADE, related_name='items', verbose_name='Presupuesto')
-    descripcion = models.CharField(max_length=200, verbose_name='Descripción')
-    cantidad = models.DecimalField(max_digits=8, decimal_places=2, default=1, verbose_name='Cantidad')
-    precio_unitario = models.DecimalField(max_digits=12, decimal_places=2, verbose_name='Precio Unitario')
+    descripcion = models.CharField(max_length=300, verbose_name='Descripción del Trabajo')
+    precio = models.BigIntegerField(default=0, verbose_name='Precio (₲)')
 
     class Meta:
         verbose_name = 'Item'
         verbose_name_plural = 'Items'
+        ordering = ['pk']
 
     @property
     def total(self):
-        return self.cantidad * self.precio_unitario
+        return self.precio
 
     def __str__(self):
         return self.descripcion

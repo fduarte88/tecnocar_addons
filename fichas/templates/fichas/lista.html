@@ -12,20 +12,42 @@
 <nav aria-label="breadcrumb">
     <ol class="breadcrumb mb-3">
         <li class="breadcrumb-item"><a href="{% url 'core:dashboard' %}">Dashboard</a></li>
+        {% if vehiculo_filtro %}
+        <li class="breadcrumb-item">
+            <a href="{% url 'clientes:detalle' vehiculo_filtro.cliente.pk %}">{{ vehiculo_filtro.cliente }}</a>
+        </li>
+        {% endif %}
         <li class="breadcrumb-item active">Hojas de Recepción</li>
     </ol>
 </nav>
 {% endblock %}
 
 {% block content %}
+
+{% if vehiculo_filtro %}
+<div class="alert alert-warning d-flex align-items-center gap-3 mb-4 border-0 shadow-sm">
+    <i class="fas fa-car fa-lg text-warning"></i>
+    <div class="flex-grow-1">
+        <span class="fw-bold">{{ vehiculo_filtro.marca }} {{ vehiculo_filtro.modelo }}</span>
+        <span class="text-muted ms-2">{{ vehiculo_filtro.placa }}</span>
+        <span class="text-muted ms-2">— {{ vehiculo_filtro.cliente }}</span>
+    </div>
+    <a href="{% url 'fichas:lista' %}" class="btn btn-sm btn-outline-secondary">
+        <i class="fas fa-times me-1"></i>Quitar filtro
+    </a>
+</div>
+{% endif %}
+
 <!-- Filtro por estado -->
 <div class="card mb-4 border-0 shadow-sm">
     <div class="card-body py-2 d-flex gap-2 flex-wrap">
-        <a href="{% url 'fichas:lista' %}" class="btn btn-sm {% if not estado %}btn-dark{% else %}btn-outline-secondary{% endif %}">
+        <a href="{% url 'fichas:lista' %}{% if vehiculo_filtro %}?vehiculo={{ vehiculo_filtro.pk }}{% endif %}"
+           class="btn btn-sm {% if not estado %}btn-dark{% else %}btn-outline-secondary{% endif %}">
             Todos
         </a>
         {% for val, label in estados %}
-        <a href="?estado={{ val }}" class="btn btn-sm {% if estado == val %}btn-dark{% else %}btn-outline-secondary{% endif %}">
+        <a href="?{% if vehiculo_filtro %}vehiculo={{ vehiculo_filtro.pk }}&{% endif %}estado={{ val }}"
+           class="btn btn-sm {% if estado == val %}btn-dark{% else %}btn-outline-secondary{% endif %}">
             {{ label }}
         </a>
         {% endfor %}

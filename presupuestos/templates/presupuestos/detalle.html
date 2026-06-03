@@ -1,6 +1,13 @@
 {% extends 'base.html' %}
+{% load guarani_filters %}
 {% block title %}P-{{ presupuesto.pk|stringformat:"04d" }} — TecnoCar{% endblock %}
 {% block page_title %}Presupuesto P-{{ presupuesto.pk|stringformat:"04d" }}{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'presupuestos:pdf' presupuesto.pk %}" class="btn btn-danger" target="_blank">
+    <i class="fas fa-file-pdf me-1"></i>Imprimir / PDF
+</a>
+{% endblock %}
 
 {% block breadcrumb %}
 <nav aria-label="breadcrumb">
@@ -14,134 +21,148 @@
 
 {% block content %}
 <div class="row g-4">
+
+    <!-- ── Columna principal ─────────────────────────────────── -->
     <div class="col-12 col-lg-8">
-        <!-- Items -->
-        <div class="card table-card mb-4">
-            <div class="card-header d-flex justify-content-between align-items-center py-3">
-                <span><i class="fas fa-list me-2 text-warning"></i>Items del Presupuesto</span>
-                <span class="badge bg-secondary">{{ presupuesto.items.count }} item(s)</span>
+
+        <!-- Info del vehículo/cliente -->
+        <div class="card form-card mb-4">
+            <div class="card-body py-3 px-4">
+                <div class="row g-3">
+                    <div class="col-sm-4">
+                        <small class="text-muted d-block">Cliente</small>
+                        <a href="{% url 'clientes:detalle' presupuesto.ficha.vehiculo.cliente.pk %}" class="fw-bold">
+                            {{ presupuesto.ficha.vehiculo.cliente }}
+                        </a>
+                    </div>
+                    <div class="col-sm-4">
+                        <small class="text-muted d-block">Vehículo</small>
+                        <span class="fw-bold">{{ presupuesto.ficha.vehiculo.marca }} {{ presupuesto.ficha.vehiculo.modelo }}</span>
+                        <span class="text-muted ms-1">({{ presupuesto.ficha.vehiculo.placa }})</span>
+                    </div>
+                    <div class="col-sm-4">
+                        <small class="text-muted d-block">Hoja de Recepción</small>
+                        <a href="{% url 'fichas:detalle' presupuesto.ficha.pk %}">HR-{{ presupuesto.ficha.pk|stringformat:"04d" }}</a>
+                    </div>
+                </div>
             </div>
-            <div class="card-body p-0">
-                <table class="table mb-0">
+        </div>
+
+        <!-- Tabla de items -->
+        <div class="card table-card">
+            <div class="card-header d-flex justify-content-between align-items-center py-3">
+                <span><i class="fas fa-list-ul me-2 text-warning"></i>Trabajos / Items</span>
+                <span class="badge bg-secondary" id="badge_items">{{ presupuesto.items.count }} item(s)</span>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table mb-0" id="tabla_items">
                     <thead>
                         <tr>
-                            <th>Descripción</th>
-                            <th class="text-end">Cant.</th>
-                            <th class="text-end">P. Unit.</th>
-                            <th class="text-end">Total</th>
-                            <th></th>
+                            <th class="ps-4" style="width:3%">#</th>
+                            <th>Descripción del Trabajo</th>
+                            <th class="text-end" style="width:22%">Precio</th>
+                            <th style="width:5%"></th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="tbody_items">
                         {% for item in presupuesto.items.all %}
-                        <tr>
+                        <tr data-precio="{{ item.precio }}">
+                            <td class="ps-4 text-muted">{{ forloop.counter }}</td>
                             <td>{{ item.descripcion }}</td>
-                            <td class="text-end">{{ item.cantidad }}</td>
-                            <td class="text-end">$ {{ item.precio_unitario|floatformat:2 }}</td>
-                            <td class="text-end fw-medium">$ {{ item.total|floatformat:2 }}</td>
+                            <td class="text-end fw-medium">{{ item.precio|guarani }}</td>
                             <td class="text-center">
+                                {% if presupuesto.estado == 'borrador' %}
                                 <form method="post" action="{% url 'presupuestos:eliminar_item' presupuesto.pk item.pk %}" class="d-inline">
                                     {% csrf_token %}
-                                    <button type="submit" class="btn btn-sm btn-outline-danger"
-                                            onclick="return confirm('¿Eliminar este item?')">
-                                        <i class="fas fa-trash"></i>
+                                    <button type="submit" class="btn btn-sm btn-link text-danger p-0" title="Eliminar">
+                                        <i class="fas fa-times"></i>
                                     </button>
                                 </form>
+                                {% endif %}
                             </td>
                         </tr>
                         {% empty %}
-                        <tr>
-                            <td colspan="5" class="text-center py-3 text-muted">Sin items aún. Agregue uno abajo.</td>
+                        <tr id="tr_vacio">
+                            <td colspan="4" class="text-center py-3 text-muted fst-italic">
+                                Aún no hay items. Agregue el primer trabajo abajo.
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
-                    {% if presupuesto.items.exists %}
-                    <tfoot class="table-light fw-medium">
-                        <tr>
-                            <td colspan="3" class="text-end">Subtotal:</td>
-                            <td class="text-end">$ {{ presupuesto.subtotal|floatformat:2 }}</td>
-                            <td></td>
-                        </tr>
-                        <tr>
-                            <td colspan="3" class="text-end">IVA (16%):</td>
-                            <td class="text-end">$ {{ presupuesto.iva|floatformat:2 }}</td>
-                            <td></td>
-                        </tr>
-                        <tr class="table-warning">
-                            <td colspan="3" class="text-end fw-bold">TOTAL:</td>
-                            <td class="text-end fw-bold">$ {{ presupuesto.total|floatformat:2 }}</td>
-                            <td></td>
+
+                    <!-- Fila de ingreso de nuevo item -->
+                    {% if presupuesto.estado == 'borrador' %}
+                    <tfoot>
+                        <tr class="table-light">
+                            <td colspan="4" class="px-3 py-2">
+                                <form method="post"
+                                      action="{% url 'presupuestos:agregar_item' presupuesto.pk %}"
+                                      id="form_nuevo_item" novalidate>
+                                    {% csrf_token %}
+                                    <div class="d-flex gap-2 align-items-center">
+                                        <i class="fas fa-plus text-warning flex-shrink-0"></i>
+                                        <div class="flex-grow-1">
+                                            {{ item_form.descripcion }}
+                                        </div>
+                                        <div class="input-group" style="max-width:200px">
+                                            <span class="input-group-text fw-bold">&#x20B2;</span>
+                                            {{ item_form.precio }}
+                                        </div>
+                                        <button type="submit" class="btn btn-warning btn-sm px-3 flex-shrink-0">
+                                            <i class="fas fa-plus me-1"></i>Agregar
+                                        </button>
+                                    </div>
+                                </form>
+                            </td>
                         </tr>
                     </tfoot>
                     {% endif %}
                 </table>
             </div>
+
+            <!-- Totalizador -->
+            <div class="card-footer bg-white border-top-0 pt-0 pb-3 px-4">
+                <div class="d-flex justify-content-end">
+                    <table class="table table-sm w-auto mb-0">
+                        <tr>
+                            <td class="text-end text-muted pe-4 border-0">TOTAL</td>
+                            <td class="text-end fw-bold fs-5 border-0" id="total_display" style="min-width:180px">
+                                {{ presupuesto.total|guarani }}
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
         </div>
 
-        <!-- Agregar Item -->
-        {% if presupuesto.estado == 'borrador' %}
-        <div class="card form-card">
-            <div class="card-header py-3"><i class="fas fa-plus me-2 text-warning"></i>Agregar Item</div>
-            <div class="card-body p-4">
-                <form method="post" action="{% url 'presupuestos:agregar_item' presupuesto.pk %}" novalidate>
-                    {% csrf_token %}
-                    <div class="row g-3">
-                        <div class="col-12 col-md-6">
-                            <label class="form-label fw-medium">Descripción *</label>
-                            {{ item_form.descripcion }}
-                        </div>
-                        <div class="col-6 col-md-3">
-                            <label class="form-label fw-medium">Cantidad</label>
-                            {{ item_form.cantidad }}
-                        </div>
-                        <div class="col-6 col-md-3">
-                            <label class="form-label fw-medium">Precio Unit.</label>
-                            {{ item_form.precio_unitario }}
-                        </div>
-                    </div>
-                    <div class="mt-3">
-                        <button type="submit" class="btn btn-warning">
-                            <i class="fas fa-plus me-2"></i>Agregar
-                        </button>
-                    </div>
-                </form>
+        <!-- Observaciones -->
+        {% if presupuesto.observaciones %}
+        <div class="card form-card mt-4">
+            <div class="card-body px-4 py-3">
+                <small class="text-muted d-block mb-1">Observaciones</small>
+                <p class="mb-0">{{ presupuesto.observaciones }}</p>
             </div>
         </div>
         {% endif %}
+
     </div>
 
-    <!-- Sidebar -->
+    <!-- ── Columna lateral ──────────────────────────────────── -->
     <div class="col-12 col-lg-4">
-        <div class="card form-card mb-3">
-            <div class="card-header py-3"><i class="fas fa-info-circle me-2 text-warning"></i>Información</div>
-            <div class="card-body p-3">
-                <p class="mb-2 small">
-                    <strong>Hoja de Recepción:</strong><br>
-                    <a href="{% url 'fichas:detalle' presupuesto.ficha.pk %}">HR-{{ presupuesto.ficha.pk|stringformat:"04d" }}</a>
-                </p>
-                <p class="mb-2 small">
-                    <strong>Cliente:</strong><br>{{ presupuesto.ficha.vehiculo.cliente }}
-                </p>
-                <p class="mb-2 small">
-                    <strong>Vehículo:</strong><br>
-                    {{ presupuesto.ficha.vehiculo.marca }} {{ presupuesto.ficha.vehiculo.modelo }}
-                    ({{ presupuesto.ficha.vehiculo.placa }})
-                </p>
-                <p class="mb-0 small">
-                    <strong>Fecha:</strong><br>{{ presupuesto.fecha|date:"d/m/Y" }}
-                </p>
-            </div>
-        </div>
 
-        <div class="card form-card">
-            <div class="card-header py-3"><i class="fas fa-exchange-alt me-2 text-warning"></i>Estado</div>
+        <!-- Estado -->
+        <div class="card form-card mb-3">
+            <div class="card-header py-3">
+                <i class="fas fa-tag me-2 text-warning"></i>Estado
+            </div>
             <div class="card-body p-3">
-                <div class="mb-2 text-center">
-                    {% if presupuesto.estado == 'aprobado' %}<span class="badge bg-success fs-6">
-                    {% elif presupuesto.estado == 'rechazado' %}<span class="badge bg-danger fs-6">
-                    {% elif presupuesto.estado == 'facturado' %}<span class="badge bg-primary fs-6">
-                    {% elif presupuesto.estado == 'enviado' %}<span class="badge bg-info text-dark fs-6">
-                    {% else %}<span class="badge bg-secondary fs-6">
+                <div class="text-center mb-3">
+                    {% if presupuesto.estado == 'aprobado' %}<span class="badge bg-success fs-6 px-3 py-2">
+                    {% elif presupuesto.estado == 'rechazado' %}<span class="badge bg-danger fs-6 px-3 py-2">
+                    {% elif presupuesto.estado == 'facturado' %}<span class="badge bg-primary fs-6 px-3 py-2">
+                    {% elif presupuesto.estado == 'enviado' %}<span class="badge bg-info text-dark fs-6 px-3 py-2">
+                    {% else %}<span class="badge bg-secondary fs-6 px-3 py-2">
                     {% endif %}{{ presupuesto.get_estado_display }}</span>
                 </div>
                 <form method="post" action="{% url 'presupuestos:cambiar_estado' presupuesto.pk %}">
@@ -152,11 +173,77 @@
                         {% endfor %}
                     </select>
                     <button type="submit" class="btn btn-warning btn-sm w-100">
-                        <i class="fas fa-save me-2"></i>Actualizar
+                        <i class="fas fa-save me-1"></i>Actualizar Estado
                     </button>
                 </form>
             </div>
         </div>
+
+        <!-- Datos del presupuesto -->
+        <div class="card form-card">
+            <div class="card-body p-3">
+                <p class="small mb-2"><strong>Fecha:</strong> {{ presupuesto.fecha|date:"d/m/Y" }}</p>
+                <p class="small mb-0">
+                    <strong>Items:</strong>
+                    <span id="sidebar_items">{{ presupuesto.items.count }}</span>
+                </p>
+                <hr class="my-2">
+                <p class="small mb-0 fw-bold d-flex justify-content-between">
+                    <span>TOTAL</span>
+                    <span id="sidebar_total">{{ presupuesto.total|guarani }}</span>
+                </p>
+            </div>
+        </div>
+
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    // Formatea número como Guaraní: 1500000 → ₲ 1.500.000
+    function fmtGs(n) {
+        return '₲ ' + Math.round(n).toLocaleString('es-PY').replace(/,/g, '.');
+    }
+
+    function recalcular() {
+        let total = 0;
+        document.querySelectorAll('#tbody_items tr[data-precio]').forEach(tr => {
+            total += parseInt(tr.dataset.precio || 0, 10);
+        });
+        const count = document.querySelectorAll('#tbody_items tr[data-precio]').length;
+
+        document.getElementById('total_display').textContent  = fmtGs(total);
+        document.getElementById('sidebar_total').textContent  = fmtGs(total);
+        document.getElementById('badge_items').textContent    = count + ' item(s)';
+        document.getElementById('sidebar_items').textContent  = count;
+    }
+
+    // Formato con puntos al escribir el precio
+    const precioInput = document.getElementById('id_item_precio');
+    if (precioInput) {
+        precioInput.addEventListener('input', function () {
+            this.value = this.value.replace(/\D/g, '');
+        });
+        // Foco automático en descripción al terminar de ingresar precio con Enter
+        precioInput.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                document.getElementById('form_nuevo_item').requestSubmit();
+            }
+        });
+        const descInput = document.getElementById('id_item_descripcion');
+        if (descInput) {
+            descInput.addEventListener('keydown', function (e) {
+                if (e.key === 'Tab' && !e.shiftKey) {
+                    // Tab natural hacia precio
+                }
+            });
+        }
+    }
+
+    recalcular();
+})();
+</script>
 {% endblock %}

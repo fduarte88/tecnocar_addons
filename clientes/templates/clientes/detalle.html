@@ -86,8 +86,21 @@
                                 {% empty %}<span class="text-muted small">—</span>
                                 {% endfor %}
                             </td>
-                            <td><span class="badge bg-secondary">{{ v.fichas.count }}</span></td>
                             <td>
+                                {% if v.fichas.count %}
+                                <a href="{% url 'fichas:lista' %}?vehiculo={{ v.pk }}"
+                                   class="badge bg-warning text-dark text-decoration-none"
+                                   title="Ver hojas de recepción">
+                                    {{ v.fichas.count }} HR
+                                </a>
+                                {% else %}
+                                <span class="badge bg-light text-muted border">0 HR</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <a href="{% url 'fichas:crear' %}?cliente={{ cliente.pk }}" class="btn btn-sm btn-warning me-1" title="Nuevo ingreso">
+                                    <i class="fas fa-plus"></i>
+                                </a>
                                 <a href="{% url 'fichas:vehiculo_editar' v.pk %}" class="btn btn-sm btn-outline-secondary" title="Editar vehículo">
                                     <i class="fas fa-edit"></i>
                                 </a>
