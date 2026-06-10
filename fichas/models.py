@@ -75,3 +75,13 @@ class FichaIngreso(models.Model):
 
     def __str__(self):
         return f'HR-{self.pk:04d} | {self.vehiculo} - {self.get_estado_display()}'
+
+    @property
+    def estado_index(self):
+        keys = [k for k, _ in self.ESTADO_CHOICES]
+        return keys.index(self.estado)
+
+    @property
+    def estado_pct(self):
+        n = len(self.ESTADO_CHOICES)
+        return round(self.estado_index * (100.0 / n), 2)

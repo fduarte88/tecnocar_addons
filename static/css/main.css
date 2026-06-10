@@ -126,6 +126,85 @@ body { background-color: #f4f6f9; }
 .login-card { border: none; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,.3); }
 .login-logo { font-size: 3rem; }
 
+/* ── Estado Stepper (pestañas de estado) ───── */
+.estado-stepper-wrap { overflow-x: auto; }
+.estado-stepper {
+    position: relative;
+    display: flex;
+    min-width: 640px;
+    padding-top: 4px;
+}
+.estado-stepper .step-track {
+    position: absolute;
+    top: 22px;
+    left: calc(100% / 12);
+    right: calc(100% / 12);
+    height: 3px;
+    background: #e2e8f0;
+    border-radius: 2px;
+}
+.estado-stepper .step-track-fill {
+    position: absolute;
+    top: 22px;
+    left: calc(100% / 12);
+    height: 3px;
+    background: linear-gradient(90deg, #f59e0b, #fbbf24);
+    border-radius: 2px;
+    transition: width .4s ease;
+}
+.estado-stepper .step-item { flex: 1; margin: 0; }
+.estado-stepper .step-btn {
+    width: 100%;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+.estado-stepper .step-circle {
+    position: relative;
+    z-index: 2;
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700;
+    font-size: .9rem;
+    border: 2px solid #cbd5e1;
+    background: #fff;
+    color: #94a3b8;
+    transition: all .25s ease;
+}
+.estado-stepper .step-label {
+    font-size: .72rem;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    color: #94a3b8;
+    font-weight: 600;
+    text-align: center;
+}
+.estado-stepper .step-btn:hover:not(:disabled) .step-circle {
+    border-color: #f59e0b;
+    color: #f59e0b;
+}
+.estado-stepper .step-btn.completed .step-circle {
+    background: #f59e0b;
+    border-color: #f59e0b;
+    color: #fff;
+}
+.estado-stepper .step-btn.completed .step-label { color: #1a1a2e; }
+.estado-stepper .step-btn.active .step-circle {
+    background: #1a1a2e;
+    border-color: #1a1a2e;
+    color: #fff;
+    transform: scale(1.15);
+    box-shadow: 0 0 0 5px rgba(26,26,46,.12);
+}
+.estado-stepper .step-btn.active .step-label { color: #1a1a2e; font-weight: 700; }
+.estado-stepper .step-btn:disabled { cursor: default; }
+
 /* ── Utilities ───────────────────────────── */
 .section-title { font-size: 1rem; font-weight: 600; color: #374151; border-left: 3px solid #f59e0b; padding-left: .75rem; margin-bottom: 1rem; }
 .form-card { border: none; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,.07); }

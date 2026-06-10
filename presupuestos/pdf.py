@@ -146,16 +146,20 @@ def generar_pdf_presupuesto(presupuesto):
 
     # encabezado de tabla
     item_rows = [[
-        Paragraph('#', st['th']),
+        Paragraph('Cant.', st['th']),
         Paragraph('Descripción del Trabajo', st['th']),
-        Paragraph('Precio', st['th']),
+        Paragraph('P. Unitario', st['th']),
+        Paragraph('Subtotal', st['th']),
     ]]
-    for i, item in enumerate(items, 1):
+    for item in items:
         item_rows.append([
-            Paragraph(str(i), ParagraphStyle('n', fontSize=9, textColor=TEXT_MUTED,
-                                             fontName='Helvetica', leading=12)),
+            Paragraph(str(item.cantidad), ParagraphStyle('n', fontSize=9, textColor=TEXT_MUTED,
+                                             fontName='Helvetica-Bold', leading=12,
+                                             alignment=TA_CENTER)),
             Paragraph(item.descripcion, st['td_left']),
-            Paragraph(_gs(item.precio), st['td_right']),
+            Paragraph(_gs(item.precio), ParagraphStyle('tdr2', fontSize=9, fontName='Helvetica',
+                                             textColor=TEXT_MUTED, leading=12, alignment=TA_RIGHT)),
+            Paragraph(_gs(item.total), st['td_right']),
         ])
 
     # fila vacía si no hay items
@@ -166,9 +170,10 @@ def generar_pdf_presupuesto(presupuesto):
                 'empty', fontSize=9, fontName='Helvetica-Oblique',
                 textColor=TEXT_MUTED, leading=12)),
             Paragraph('', st['td_right']),
+            Paragraph('', st['td_right']),
         ])
 
-    items_t = Table(item_rows, colWidths=[1*cm, 13*cm, 4.5*cm])
+    items_t = Table(item_rows, colWidths=[1.5*cm, 10*cm, 3.5*cm, 3.5*cm])
     row_styles = [
         ('BACKGROUND',    (0,0),  (-1,0),   PRIMARY),
         ('TEXTCOLOR',     (0,0),  (-1,0),   WHITE),

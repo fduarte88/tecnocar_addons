@@ -88,36 +88,36 @@
     </div>
 </div>
 
-<!-- Quick Actions & Recent -->
-<div class="row g-4">
-
-    <!-- Acciones Rápidas -->
-    <div class="col-12 col-lg-4">
-        <div class="card table-card h-100">
+<!-- Acciones Rápidas -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card table-card">
             <div class="card-header py-3">
                 <i class="fas fa-bolt me-2 text-warning"></i>Acciones Rápidas
             </div>
-            <div class="card-body d-flex flex-column gap-2 p-3">
-                <a href="{% url 'clientes:crear' %}" class="btn btn-outline-primary text-start">
+            <div class="card-body d-flex flex-wrap gap-2 p-3">
+                <a href="{% url 'clientes:crear' %}" class="btn btn-outline-primary">
                     <i class="fas fa-user-plus me-2"></i>Registrar Cliente
                 </a>
-                <a href="{% url 'fichas:crear' %}" class="btn btn-outline-warning text-start">
+                <a href="{% url 'fichas:crear' %}" class="btn btn-outline-warning">
                     <i class="fas fa-file-medical me-2"></i>Nueva Hoja de Recepción
                 </a>
-                <a href="{% url 'presupuestos:crear' %}" class="btn btn-outline-success text-start">
+                <a href="{% url 'presupuestos:crear' %}" class="btn btn-outline-success">
                     <i class="fas fa-file-invoice-dollar me-2"></i>Nuevo Presupuesto
                 </a>
                 {% if request.user.is_superuser or request.user.rol == 'admin' %}
-                <a href="{% url 'accounts:usuario_crear' %}" class="btn btn-outline-secondary text-start">
+                <a href="{% url 'accounts:usuario_crear' %}" class="btn btn-outline-secondary">
                     <i class="fas fa-user-plus me-2"></i>Nuevo Usuario
                 </a>
                 {% endif %}
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Últimas Fichas -->
-    <div class="col-12 col-lg-8">
+<!-- Últimas Fichas -->
+<div class="row g-4">
+    <div class="col-12">
         <div class="card table-card">
             <div class="card-header d-flex justify-content-between align-items-center py-3">
                 <span><i class="fas fa-history me-2 text-warning"></i>Últimas Hojas de Recepción</span>

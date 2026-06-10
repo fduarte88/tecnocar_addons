@@ -4,3 +4,4 @@ django-crispy-forms==2.6
 crispy-bootstrap5==2026.3
 django-widget-tweaks==1.5.1
 Pillow==12.1.1
+django-ratelimit==4.1.0

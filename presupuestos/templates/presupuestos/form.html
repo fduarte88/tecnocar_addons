@@ -69,41 +69,50 @@
         <table class="table mb-0" id="tabla_items">
             <thead>
                 <tr>
-                    <th class="ps-4" style="width:4%">#</th>
+                    <th class="text-center" style="width:7%">Cant.</th>
                     <th>Descripción del Trabajo</th>
-                    <th class="text-end" style="width:22%">Precio (₲)</th>
-                    <th style="width:5%"></th>
+                    <th class="text-end" style="width:20%">P. Unitario (₲)</th>
+                    <th class="text-end" style="width:18%">Subtotal (₲)</th>
+                    <th style="width:4%"></th>
                 </tr>
             </thead>
             <tbody id="tbody_items">
-                <!-- las filas se agregan por JS -->
                 <tr id="tr_vacio">
-                    <td colspan="4" class="text-center py-3 text-muted fst-italic">
+                    <td colspan="5" class="text-center py-3 text-muted fst-italic">
                         Agregue el primer item abajo.
                     </td>
                 </tr>
             </tbody>
-            <tfoot>
-                <tr class="table-light">
-                    <td colspan="4" class="px-3 py-2">
-                        <div class="d-flex gap-2 align-items-center">
-                            <i class="fas fa-plus text-warning flex-shrink-0"></i>
-                            <input type="text" id="in_desc" class="form-control"
-                                   placeholder="Descripción del trabajo o repuesto...">
-                            <div class="input-group" style="max-width:200px">
-                                <span class="input-group-text fw-bold">&#x20B2;</span>
-                                <input type="number" id="in_precio" class="form-control text-end"
-                                       placeholder="0" min="0">
-                            </div>
-                            <button type="button" id="btn_agregar"
-                                    class="btn btn-warning btn-sm px-3 flex-shrink-0">
-                                <i class="fas fa-plus me-1"></i>Agregar
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-            </tfoot>
         </table>
+    </div>
+
+    <!-- Fila agregar item (fuera de la tabla) -->
+    <div class="border-top bg-light px-3 py-2">
+        <div class="row g-2 align-items-end">
+            <div class="col-auto" style="width:90px">
+                <label class="form-label small text-muted mb-1">Cant.</label>
+                <input type="number" id="in_cant" class="form-control form-control-sm text-center"
+                       placeholder="1" min="1" value="1">
+            </div>
+            <div class="col">
+                <label class="form-label small text-muted mb-1">Descripción del Trabajo</label>
+                <input type="text" id="in_desc" class="form-control form-control-sm"
+                       placeholder="Descripción del trabajo o repuesto...">
+            </div>
+            <div class="col-auto" style="width:185px">
+                <label class="form-label small text-muted mb-1">P. Unitario (₲)</label>
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text fw-bold">&#x20B2;</span>
+                    <input type="number" id="in_precio" class="form-control text-end"
+                           placeholder="0" min="0">
+                </div>
+            </div>
+            <div class="col-auto">
+                <button type="button" id="btn_agregar" class="btn btn-warning btn-sm px-3">
+                    <i class="fas fa-plus me-1"></i>Agregar
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- Totalizador -->
@@ -159,7 +168,9 @@
     function recalcular() {
         let total = 0;
         document.querySelectorAll('.fila-item').forEach(tr => {
-            total += parseInt(tr.dataset.precio || 0, 10);
+            const cant   = parseInt(tr.dataset.cant  || 1, 10);
+            const precio = parseInt(tr.dataset.precio || 0, 10);
+            total += cant * precio;
         });
         document.getElementById('total_display').textContent = fmtGs(total);
         const count = document.querySelectorAll('.fila-item').length;
@@ -168,24 +179,33 @@
 
     // ── Agregar fila ───────────────────────────────────────────
     function agregarItem() {
+        const cant   = Math.max(1, parseInt(document.getElementById('in_cant').value  || 1, 10));
         const desc   = document.getElementById('in_desc').value.trim();
         const precio = parseInt(document.getElementById('in_precio').value || 0, 10);
         if (!desc) { document.getElementById('in_desc').focus(); return; }
 
         contador++;
+        const subtotal = cant * precio;
         const tbody = document.getElementById('tbody_items');
         const tr = document.createElement('tr');
         tr.className = 'fila-item';
+        tr.dataset.cant   = cant;
         tr.dataset.precio = precio;
         tr.innerHTML = `
-            <td class="ps-4 text-muted">${contador}</td>
+            <td class="text-center fw-medium">
+                ${cant}
+                <input type="hidden" name="item_cantidad" value="${cant}">
+            </td>
             <td>
                 ${desc}
                 <input type="hidden" name="item_descripcion" value="${desc.replace(/"/g,'&quot;')}">
             </td>
-            <td class="text-end fw-medium">
+            <td class="text-end text-muted">
                 ${fmtGs(precio)}
                 <input type="hidden" name="item_precio" value="${precio}">
+            </td>
+            <td class="text-end fw-medium">
+                ${fmtGs(subtotal)}
             </td>
             <td class="text-center">
                 <button type="button" class="btn btn-sm btn-link text-danger p-0 btn-quitar" title="Quitar">
@@ -195,18 +215,14 @@
 
         tr.querySelector('.btn-quitar').addEventListener('click', () => {
             tr.remove();
-            // renumerar
-            document.querySelectorAll('.fila-item td:first-child').forEach((td, i) => {
-                td.textContent = i + 1;
-            });
-            contador = document.querySelectorAll('.fila-item').length;
             recalcular();
         });
 
         tbody.appendChild(tr);
-        document.getElementById('in_desc').value   = '';
+        document.getElementById('in_cant').value  = '1';
+        document.getElementById('in_desc').value  = '';
         document.getElementById('in_precio').value = '';
-        document.getElementById('in_desc').focus();
+        document.getElementById('in_cant').focus();
         recalcular();
     }
 
@@ -219,6 +235,10 @@
     // Enter en descripción → pasar a precio
     document.getElementById('in_desc').addEventListener('keydown', e => {
         if (e.key === 'Enter') { e.preventDefault(); document.getElementById('in_precio').focus(); }
+    });
+    // Enter en cantidad → pasar a descripción
+    document.getElementById('in_cant').addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); document.getElementById('in_desc').focus(); }
     });
 
     recalcular();

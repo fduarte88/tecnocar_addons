@@ -15,8 +15,14 @@ class PresupuestoForm(forms.ModelForm):
 class ItemPresupuestoForm(forms.ModelForm):
     class Meta:
         model = ItemPresupuesto
-        fields = ['descripcion', 'precio']
+        fields = ['cantidad', 'descripcion', 'precio']
         widgets = {
+            'cantidad': forms.NumberInput(attrs={
+                'class': 'form-control text-center',
+                'placeholder': '1',
+                'min': '1',
+                'id': 'id_item_cantidad',
+            }),
             'descripcion': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Descripción del trabajo o repuesto...',

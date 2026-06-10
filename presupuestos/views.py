@@ -25,6 +25,7 @@ def presupuesto_crear(request):
     if request.method == 'POST':
         ficha_pk      = request.POST.get('ficha')
         observaciones = request.POST.get('observaciones', '')
+        cantidades    = request.POST.getlist('item_cantidad')
         descripciones = request.POST.getlist('item_descripcion')
         precios       = request.POST.getlist('item_precio')
 
@@ -33,15 +34,20 @@ def presupuesto_crear(request):
                 ficha_id=ficha_pk,
                 observaciones=observaciones,
             )
-            for desc, precio in zip(descripciones, precios):
+            for cant, desc, precio in zip(cantidades, descripciones, precios):
                 desc = desc.strip()
                 if desc:
                     try:
                         p = int(str(precio).replace('.', '').replace(',', '') or 0)
                     except ValueError:
                         p = 0
+                    try:
+                        q = max(1, int(cant or 1))
+                    except ValueError:
+                        q = 1
                     ItemPresupuesto.objects.create(
                         presupuesto=presupuesto,
+                        cantidad=q,
                         descripcion=desc,
                         precio=p,
                     )
@@ -96,6 +102,19 @@ def presupuesto_pdf(request, pk):
     response = HttpResponse(buffer, content_type='application/pdf')
     response['Content-Disposition'] = f'inline; filename="P-{presupuesto.pk:04d}.pdf"'
     return response
+
+
+@login_required
+def presupuesto_editar_item(request, pk, item_pk):
+    item = get_object_or_404(ItemPresupuesto, pk=item_pk, presupuesto__pk=pk)
+    if request.method == 'POST' and item.presupuesto.estado == 'borrador':
+        try:
+            precio = int(str(request.POST.get('precio', '0')).replace('.', '').replace(',', '') or 0)
+            item.precio = max(0, precio)
+            item.save()
+        except (ValueError, TypeError):
+            messages.error(request, 'Precio inválido.')
+    return redirect('presupuestos:detalle', pk=pk)
 
 
 @login_required

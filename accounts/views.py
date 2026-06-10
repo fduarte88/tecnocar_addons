@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
+from django_ratelimit.decorators import ratelimit
 from .models import Usuario
 from .forms import LoginForm, UsuarioCreacionForm, UsuarioEdicionForm, CambiarPasswordForm
 
@@ -10,6 +11,7 @@ def es_admin(user):
     return user.is_authenticated and (user.is_superuser or user.rol == 'admin')
 
 
+@ratelimit(key='ip', rate='100/m', method='POST', block=True)
 def login_view(request):
     if request.user.is_authenticated:
         return redirect('core:dashboard')
