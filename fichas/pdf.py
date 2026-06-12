@@ -196,8 +196,7 @@ def generar_pdf_hoja_recepcion(ficha):
          _fila('Chassis', v.chassis or '—')[0], _fila('Chassis', v.chassis or '—')[1]],
         [_fila('Km Entrada', f"{v.km_entrada:,}".replace(',','.'))[0],
          _fila('Km Entrada', f"{v.km_entrada:,}".replace(',','.'))[1],
-         _fila('Km Salida',  f"{v.km_salida:,}".replace(',','.'))[0],
-         _fila('Km Salida',  f"{v.km_salida:,}".replace(',','.'))[1],
+         Paragraph('', st['campo_label']), Paragraph('', st['campo_valor']),
          Paragraph('', st['campo_label']), Paragraph('', st['campo_valor'])],
     ]
     elements.append(_tabla_datos(vehiculo_rows, [C3*0.28, C3*0.72, C3*0.28, C3*0.72, C3*0.28, C3*0.72]))
